@@ -53,6 +53,7 @@
             box-sizing: border-box;
         }
 
+        [3 lines of post-context]
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #faf9f5;
@@ -328,4 +329,83 @@
             font-weight: bold;
             color: #4facfe;
             margin-left: 10px;
+        }
+
+        /* 모바일 반응형 */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                border-radius: 0.5rem;
+            }
+            
+            .header {
+                padding: 20px 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .main-content {
+                padding: 10px;
+            }
+            
+            .upload-area {
+                padding: 40px 15px;
+            }
+            
+            .upload-icon {
+                width: 60px;
+                height: 60px;
+                font-size: 1.5rem;
+            }
+            
+            .controls {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .control-group {
+                padding: 15px;
+            }
+            
+            .print-area {
+                padding: 20px 10px;
+                margin: 15px 0;
+            }
+            
+            .button-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .btn {
+                margin-bottom: 10px;
+                padding: 12px;
+            }
+            
+            .info-card {
+                padding: 15px;
+                margin: 15px 0;
+                font-size: 0.9rem;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+            }
+            
+            .info-card h4 {
+                font-size: 1rem;
+                margin-bottom: 8px;
+            }
+            
+            .info-card ul {
+                margin-left: 15px;
+                line-height: 1.5;
+            }
+            
+            .info-card ul li {
+                margin-bottom: 5px;
+            }
         }
