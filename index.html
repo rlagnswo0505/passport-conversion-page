@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>여권사진 변환 및 인쇄</title>
+    <!-- styles 가져오기 -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📸 여권사진 변환기</h1>
+            <p>사진을 업로드하면 여권 규격에 맞게 자동 변환하고 A4로 인쇄할 수 있습니다</p>
+        </div>
+
+        <div class="main-content">
+            <div class="upload-area" onclick="document.getElementById('fileInput').click()" id="uploadArea">
+                <div class="upload-icon">📷</div>
+                <div class="upload-text">사진을 선택하거나 드래그해서 업로드하세요</div>
+                <div class="upload-hint">JPG, PNG 파일을 지원합니다</div>
+                <input type="file" id="fileInput" accept="image/*">
+            </div>
+
+            <div class="photo-container" id="photoContainer">
+                <div class="photo-preview">
+                    <img id="previewImage" class="preview-image" alt="미리보기">
+                    <div style="margin-top: 10px; color: #666; font-size: 0.9rem;" id="imageInfo"></div>
+                </div>
+
+                <div class="controls">
+                    <div class="control-group">
+                        <h3>📏 크기 설정</h3>
+                        <div class="input-group">
+                            <label for="widthInput">너비 (mm)</label>
+                            <input type="number" id="widthInput" value="150" min="40" max="200">
+                        </div>
+                        <div class="input-group">
+                            <label for="heightInput">높이 (mm)</label>
+                            <input type="number" id="heightInput" value="45" min="25" max="70" disabled style="background:#eee;">
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <h3>🎨 스타일 설정</h3>
+                        <div class="input-group">
+                            <label for="borderRadius">모서리 둥글기 <span class="range-value" id="borderRadiusValue">16px</span></label>
+                            <input type="range" id="borderRadius" min="0" max="16" value="16">
+                        </div>
+                        <div class="input-group">
+                            <label for="borderWidth">테두리 두께 <span class="range-value" id="borderWidthValue">1px</span></label>
+                            <input type="range" id="borderWidth" min="1" max="5" value="1">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="print-area" id="printArea">
+                    <!-- 변환된 사진들이 여기에 표시됩니다 -->
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="generatePhotos()">🔄 사진 생성</button>
+                    <button class="btn btn-primary" onclick="window.print()">🖨️ 인쇄하기</button>
+                    <button class="btn btn-secondary" onclick="resetAll()">🔄 다시 시작</button>
+                </div>
+
+                <div class="info-card">
+                    <h4>💡 사용 팁</h4>
+                    <ul>
+                        <li>여권 사진 표준 크기는 35×45mm입니다</li>
+                        <li>테두리와 둥근 모서리는 스캔할 때 경계를 명확하게 해줍니다</li>
+                        <li>A4 용지에 인쇄 후 정확한 크기로 잘라내세요</li>
+                        <li>인쇄 시 '실제 크기'로 설정하시기 바랍니다</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let uploadedImage = null;
+
+        // 파일 업로드 처리
+        const fileInput = document.getElementById('fileInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const photoContainer = document.getElementById('photoContainer');
+        const previewImage = document.getElementById('previewImage');
+        const imageInfo = document.getElementById('imageInfo');
+
+        // 드래그 앤 드롭 처리
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('이미지 파일만 업로드 가능합니다.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                uploadedImage = new Image();
+                uploadedImage.onload = () => {
+                    previewImage.src = e.target.result;
+                    imageInfo.textContent = `원본 크기: ${uploadedImage.width} × ${uploadedImage.height}px`;
+                    photoContainer.style.display = 'block';
+                    generatePhotos();
+                };
+                uploadedImage.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 범위 슬라이더 값 표시 업데이트
+        document.getElementById('borderRadius').addEventListener('input', function() {
+            document.getElementById('borderRadiusValue').textContent = this.value + 'px';
+            generatePhotos();
+        });
+
+        document.getElementById('borderWidth').addEventListener('input', function() {
+            document.getElementById('borderWidthValue').textContent = this.value + 'px';
+            generatePhotos();
+        });
+
+        // 크기 입력 변경 시 자동 업데이트
+    document.getElementById('widthInput').addEventListener('input', generatePhotos);
+    // 높이 입력은 자동 계산이므로 이벤트 제거
+
+        function generatePhotos() {
+            if (!uploadedImage) return;
+
+            const width = parseInt(document.getElementById('widthInput').value);
+            // 이미지 비율에 맞게 높이 자동 계산
+            let height = 45;
+            if (uploadedImage) {
+                height = Math.round(width * (uploadedImage.height / uploadedImage.width));
+                document.getElementById('heightInput').value = height;
+            }
+            const borderRadius = parseInt(document.getElementById('borderRadius').value);
+            const borderWidth = parseInt(document.getElementById('borderWidth').value);
+
+            // mm를 픽셀로 변환 (300 DPI 기준)
+            const widthPx = Math.round(width * 11.811); // 1mm = 11.811px at 300 DPI
+            const heightPx = Math.round(height * 11.811);
+
+            const printArea = document.getElementById('printArea');
+            printArea.innerHTML = '';
+
+            // 캔버스로 이미지 리사이즈
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = widthPx;
+            canvas.height = heightPx;
+
+            // 이미지를 캔버스 크기에 맞게 그리기 (비율 유지하며 크롭)
+            const scale = Math.max(widthPx / uploadedImage.width, heightPx / uploadedImage.height);
+            const scaledWidth = uploadedImage.width * scale;
+            const scaledHeight = uploadedImage.height * scale;
+            const offsetX = (widthPx - scaledWidth) / 2;
+            const offsetY = (heightPx - scaledHeight) / 2;
+
+            ctx.drawImage(uploadedImage, offsetX, offsetY, scaledWidth, scaledHeight);
+
+            const resizedImageUrl = canvas.toDataURL('image/jpeg', 0.9);
+
+            // A4 용지에 1개 사진만 가운데 배치
+            const totalPhotos = 1;
+
+            // 사진 배치 - 가운데 정렬
+            printArea.style.display = 'flex';
+            printArea.style.justifyContent = 'center';
+            printArea.style.alignItems = 'center';
+
+            const photoDiv = document.createElement('div');
+            photoDiv.className = 'passport-photo';
+            photoDiv.style.border = `${borderWidth}px solid #333`;
+            photoDiv.style.borderRadius = `${borderRadius}px`;
+            photoDiv.style.padding = '0';
+            photoDiv.style.overflow = 'hidden';
+
+            const img = document.createElement('img');
+            img.src = resizedImageUrl;
+            img.style.width = `${widthPx / 3.78}px`; // 화면 표시용 크기 조정
+            img.style.height = `${heightPx / 3.78}px`;
+            img.style.borderRadius = '0';
+            img.style.display = 'block';
+
+            photoDiv.appendChild(img);
+            printArea.appendChild(photoDiv);
+
+            // 정보 표시
+            document.querySelector('.info-card ul').innerHTML = `
+                <li>사진 크기: ${width} × ${height}mm</li>
+                <li>A4 용지 가운데에 1개 사진 배치</li>
+                <li>테두리 두께: ${borderWidth}px, 모서리 둥글기: ${borderRadius}px</li>
+                <li>인쇄 후 정확한 크기로 잘라내세요</li>
+            `;
+        }
+
+        function resetAll() {
+            uploadedImage = null;
+            photoContainer.style.display = 'none';
+            previewImage.src = '';
+            document.getElementById('printArea').innerHTML = '';
+            fileInput.value = '';
+            
+            // 기본값으로 리셋
+            document.getElementById('widthInput').value = 150;
+            document.getElementById('borderRadius').value = 16;
+            document.getElementById('borderWidth').value = 1;
+
+            
+            // 표시값 업데이트
+            document.getElementById('borderRadiusValue').textContent = '16px';
+            document.getElementById('borderWidthValue').textContent = '1px';
+  
+        }
+
+        // 페이지 로드 시 기본값 표시
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('borderRadiusValue').textContent = '16px';
+            document.getElementById('borderWidthValue').textContent = '1px';
+        });
+    </script>
+</body>
+</html>
