@@ -115,6 +115,19 @@
             document.getElementById('heightInput').disabled = true;
             document.getElementById('heightInput').style.background = '#eee';
             
+            // 신분증일 때 보더 줄이기
+            if (type === 'id-card') {
+                document.getElementById('borderRadius').value = 8;
+                document.getElementById('borderRadiusValue').textContent = '8px';
+                document.getElementById('borderWidth').value = 1;
+                document.getElementById('borderWidthValue').textContent = '1px';
+            } else {
+                document.getElementById('borderRadius').value = 16;
+                document.getElementById('borderRadiusValue').textContent = '16px';
+                document.getElementById('borderWidth').value = 1;
+                document.getElementById('borderWidthValue').textContent = '1px';
+            }
+            
             // 사진 재생성
             if (uploadedImage) {
                 generatePhotos();
