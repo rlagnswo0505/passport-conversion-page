@@ -18,7 +18,7 @@
             <div class="type-selector">
                 <button class="type-btn active" data-type="passport" onclick="selectType('passport')">
                     🛂 여권
-                    <span class="type-size">너비 150mm</span>
+                    <span class="type-size">너비 125mm</span>
                 </button>
                 <button class="type-btn" data-type="id-card" onclick="selectType('id-card')">
                     💳 신분증
@@ -77,7 +77,7 @@
                 <div class="info-card">
                     <h4>💡 사용 팁</h4>
                     <ul id="infoList">
-                        <li>여권: 너비 150mm 기준으로 비율에 맞게 자동 변환</li>
+                        <li>여권: 너비 125mm 기준으로 비율에 맞게 자동 변환</li>
                         <li>신분증: 너비 86mm 기준으로 비율에 맞게 자동 변환</li>
                         <li>테두리와 둥근 모서리는 스캔할 때 경계를 명확하게 해줍니다</li>
                         <li>A4 용지에 인쇄 후 정확한 크기로 잘라내세요</li>
@@ -94,7 +94,7 @@
 
         // 타입별 기본 크기 설정 (기존 여권 크기 유지)
         const typePresets = {
-            'passport': { width: 150, height: null, name: '여권', fixedRatio: false },
+            'passport': { width: 125, height: null, name: '여권', fixedRatio: false },
             'id-card': { width: 86, height: null, name: '신분증', fixedRatio: false }
         };
 
