@@ -91,6 +91,19 @@
     <script>
         let uploadedImage = null;
         let currentType = 'passport'; // 'passport' 또는 'id-card'
+        let lastResizedImageUrl = null; // 다운로드용 최종 이미지(인쇄 크기와 동일, 테두리 포함)
+
+        // 둥근 모서리 사각형 경로 그리기 (테두리 합성용)
+        function drawRoundedRectPath(ctx, x, y, w, h, r) {
+            r = Math.max(0, Math.min(r, w / 2, h / 2));
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r);
+            ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r);
+            ctx.closePath();
+        }
 
         // 타입별 기본 크기 설정 (기존 여권 크기 유지)
         const typePresets = {
@@ -130,7 +143,7 @@
             
             // 사진 재생성
             if (uploadedImage) {
-                generatePhotos();
+                renderPreview();
             }
         }
 
@@ -179,7 +192,7 @@
                     previewImage.src = e.target.result;
                     imageInfo.textContent = `원본 크기: ${uploadedImage.width} × ${uploadedImage.height}px`;
                     photoContainer.style.display = 'block';
-                    generatePhotos();
+                    renderPreview();
                 };
                 uploadedImage.src = e.target.result;
             };
@@ -189,19 +202,20 @@
         // 범위 슬라이더 값 표시 업데이트
         document.getElementById('borderRadius').addEventListener('input', function() {
             document.getElementById('borderRadiusValue').textContent = this.value + 'px';
-            generatePhotos();
+            renderPreview();
         });
 
         document.getElementById('borderWidth').addEventListener('input', function() {
             document.getElementById('borderWidthValue').textContent = this.value + 'px';
-            generatePhotos();
+            renderPreview();
         });
 
         // 크기 입력 변경 시 자동 업데이트
-    document.getElementById('widthInput').addEventListener('input', generatePhotos);
+    document.getElementById('widthInput').addEventListener('input', renderPreview);
     // 높이 입력은 자동 계산이므로 이벤트 제거
 
-        function generatePhotos() {
+        // 미리보기 갱신 (업로드/설정 변경 시 자동 호출)
+        function renderPreview() {
             if (!uploadedImage) return;
 
             const preset = typePresets[currentType];
@@ -237,6 +251,28 @@
             ctx.drawImage(uploadedImage, offsetX, offsetY, scaledWidth, scaledHeight);
 
             const resizedImageUrl = canvas.toDataURL('image/jpeg', 0.9);
+
+            // 다운로드용 이미지: 테두리 자리는 투명 여백으로, 배경도 투명한 PNG로 합성
+            // (CSS 96dpi 기준 px 값을 캔버스의 300dpi 기준 px로 환산)
+            const dpiRatio = 300 / 96;
+            const borderPx = Math.round(borderWidth * dpiRatio);
+            const radiusPx = Math.round(borderRadius * dpiRatio);
+            const innerRadiusPx = Math.max(0, radiusPx - borderPx);
+
+            const borderedCanvas = document.createElement('canvas');
+            borderedCanvas.width = widthPx + borderPx * 2;
+            borderedCanvas.height = heightPx + borderPx * 2;
+            const bctx = borderedCanvas.getContext('2d');
+            // 캔버스는 기본적으로 투명 - 별도 배경/테두리 색을 채우지 않는다
+
+            // 사진 - 둥근 사각형으로 클리핑 후 그리기 (테두리 두께만큼 안쪽으로 배치)
+            bctx.save();
+            drawRoundedRectPath(bctx, borderPx, borderPx, widthPx, heightPx, innerRadiusPx);
+            bctx.clip();
+            bctx.drawImage(canvas, borderPx, borderPx, widthPx, heightPx);
+            bctx.restore();
+
+            lastResizedImageUrl = borderedCanvas.toDataURL('image/png');
 
             // A4 용지에 1개 사진만 가운데 배치
             const totalPhotos = 1;
@@ -274,8 +310,29 @@
             `;
         }
 
+        // "사진 생성" 버튼: 미리보기를 갱신하고 인쇄 크기와 동일한 사진 파일을 다운로드
+        function generatePhotos() {
+            if (!uploadedImage) {
+                alert('먼저 사진을 업로드해주세요.');
+                return;
+            }
+
+            renderPreview();
+
+            if (!lastResizedImageUrl) return;
+
+            const typeName = typePresets[currentType].name;
+            const link = document.createElement('a');
+            link.href = lastResizedImageUrl;
+            link.download = `${typeName}_사진.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
         function resetAll() {
             uploadedImage = null;
+            lastResizedImageUrl = null;
             photoContainer.style.display = 'none';
             previewImage.src = '';
             document.getElementById('printArea').innerHTML = '';
