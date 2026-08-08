@@ -252,27 +252,52 @@
 
             const resizedImageUrl = canvas.toDataURL('image/jpeg', 0.9);
 
-            // 다운로드용 이미지: 테두리 자리는 투명 여백으로, 배경도 투명한 PNG로 합성
-            // (CSS 96dpi 기준 px 값을 캔버스의 300dpi 기준 px로 환산)
-            const dpiRatio = 300 / 96;
-            const borderPx = Math.round(borderWidth * dpiRatio);
+            // 다운로드용 이미지: 인쇄(PDF 저장)와 동일하게 A4 용지 배경 위에
+            // 사진을 실제 인쇄 위치/크기 그대로 배치해서 합성한다
+            const dpiRatio = 300 / 96; // CSS px(96dpi) -> 캔버스 px(300dpi) 환산
             const radiusPx = Math.round(borderRadius * dpiRatio);
-            const innerRadiusPx = Math.max(0, radiusPx - borderPx);
+            const mmToPx = 11.811; // 300dpi 기준 1mm당 px
+            const pageWidthPx = Math.round(210 * mmToPx);  // A4 너비
+            const pageHeightPx = Math.round(297 * mmToPx); // A4 높이
 
-            const borderedCanvas = document.createElement('canvas');
-            borderedCanvas.width = widthPx + borderPx * 2;
-            borderedCanvas.height = heightPx + borderPx * 2;
-            const bctx = borderedCanvas.getContext('2d');
-            // 캔버스는 기본적으로 투명 - 별도 배경/테두리 색을 채우지 않는다
+            const pageCanvas = document.createElement('canvas');
+            pageCanvas.width = pageWidthPx;
+            pageCanvas.height = pageHeightPx;
+            const pctx = pageCanvas.getContext('2d');
 
-            // 사진 - 둥근 사각형으로 클리핑 후 그리기 (테두리 두께만큼 안쪽으로 배치)
-            bctx.save();
-            drawRoundedRectPath(bctx, borderPx, borderPx, widthPx, heightPx, innerRadiusPx);
-            bctx.clip();
-            bctx.drawImage(canvas, borderPx, borderPx, widthPx, heightPx);
-            bctx.restore();
+            // A4 용지 배경 - 흰색
+            pctx.fillStyle = '#ffffff';
+            pctx.fillRect(0, 0, pageWidthPx, pageHeightPx);
 
-            lastResizedImageUrl = borderedCanvas.toDataURL('image/png');
+            // 사진을 용지 정중앙에 배치 (인쇄 미리보기와 동일한 위치)
+            const photoX = Math.round((pageWidthPx - widthPx) / 2);
+            const photoY = Math.round((pageHeightPx - heightPx) / 2);
+
+            // 화면/인쇄에서 보이는 그림자를 그대로 재현
+            const shadowLayers = [
+                { color: 'rgba(0,0,0,0.55)', blur: 20 * dpiRatio, offsetX: 0, offsetY: 10 * dpiRatio },
+                { color: 'rgba(0,0,0,0.35)', blur: 6 * dpiRatio, offsetX: 4 * dpiRatio, offsetY: 6 * dpiRatio }
+            ];
+            shadowLayers.forEach(shadow => {
+                pctx.save();
+                pctx.shadowColor = shadow.color;
+                pctx.shadowBlur = shadow.blur;
+                pctx.shadowOffsetX = shadow.offsetX;
+                pctx.shadowOffsetY = shadow.offsetY;
+                pctx.fillStyle = '#ffffff';
+                drawRoundedRectPath(pctx, photoX, photoY, widthPx, heightPx, radiusPx);
+                pctx.fill();
+                pctx.restore();
+            });
+
+            // 사진 - 둥근 모서리로 클리핑 후 그리기
+            pctx.save();
+            drawRoundedRectPath(pctx, photoX, photoY, widthPx, heightPx, radiusPx);
+            pctx.clip();
+            pctx.drawImage(canvas, photoX, photoY, widthPx, heightPx);
+            pctx.restore();
+
+            lastResizedImageUrl = pageCanvas.toDataURL('image/png');
 
             // A4 용지에 1개 사진만 가운데 배치
             const totalPhotos = 1;
@@ -324,7 +349,7 @@
             const typeName = typePresets[currentType].name;
             const link = document.createElement('a');
             link.href = lastResizedImageUrl;
-            link.download = `${typeName}_사진.png`;
+            link.download = `${typeName}_A4인쇄.png`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
