@@ -41,7 +41,7 @@
                 <div class="button-group">
                     <button class="btn btn-primary" onclick="generatePhotos()">🔄 사진 생성</button>
                     <button class="btn btn-primary" onclick="printPhoto('center')">🖨️ 가운데 인쇄</button>
-                    <button class="btn btn-primary" onclick="printPhoto('top-right')">↗️ 우측 상단 인쇄</button>
+                    <button class="btn btn-primary" onclick="printPhoto('top-left')">↖️ 좌측 상단 인쇄</button>
                     <button class="btn btn-secondary" onclick="resetAll()">🔄 다시 시작</button>
                 </div>
 
@@ -356,18 +356,18 @@
             document.body.removeChild(link);
         }
 
-        // 인쇄 위치 선택: 'center'(정가운데) 또는 'top-right'(우측 상단)
+        // 인쇄 위치 선택: 'center'(정가운데) 또는 'top-left'(좌측 상단)
         function printPhoto(position) {
             if (!uploadedImage) {
                 alert('먼저 사진을 업로드해주세요.');
                 return;
             }
-            document.body.classList.toggle('print-top-right', position === 'top-right');
+            document.body.classList.toggle('print-top-left', position === 'top-left');
             window.print();
         }
 
         window.addEventListener('afterprint', () => {
-            document.body.classList.remove('print-top-right');
+            document.body.classList.remove('print-top-left');
         });
 
         function resetAll() {

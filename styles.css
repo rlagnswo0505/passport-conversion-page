@@ -69,13 +69,13 @@
         padding: 0 !important;
         background: none !important;
     }
-    /* 우측 상단 인쇄 모드 */
-    body.print-top-right .print-area {
-        justify-content: flex-end !important;
+    /* 좌측 상단 인쇄 모드 */
+    body.print-top-left .print-area {
+        justify-content: flex-start !important;
         align-items: flex-start !important;
         padding: 10mm !important;
     }
-    body.print-top-right .passport-photo {
+    body.print-top-left .passport-photo {
         margin: 0 !important;
     }
 }
